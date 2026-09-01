@@ -276,7 +276,7 @@ function QRCodeModal({ member, onClose }) {
 
 // ---------- QR Code Scanner Component ----------
 function QRScannerModal({ onClose, onScanSuccess }) {
-  const [scanResult, setScanResult] = useState("قم بتوجيه الكاميرا نحو كود الـ QR الخاص بالعضو");
+  const [scanResult, setScanResult] = useState("Scan the client QR Code");
   const scannerRef = useRef(null);
 
   useEffect(() => {
@@ -296,7 +296,7 @@ function QRScannerModal({ onClose, onScanSuccess }) {
         // Ignored scan errors for quiet behavior
       }
     ).catch(err => {
-      setScanResult("تعذر تشغيل الكاميرا. يرجى التأكد من إعطاء الصلاحية.");
+      setScanResult("تعذر تشغيل الكاميرا. يرجى التأكد من الصلاحية.");
     });
 
     return () => {
@@ -648,7 +648,7 @@ function App() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <button className="btn-scan" onClick={() => setShowScanner(true)}>📷 مسح QR</button>
+        <button className="btn-scan" onClick={() => setShowScanner(true)}>Scan QR code</button>
         <button className="btn-add" onClick={openAddForm}>+ إضافة عضو</button>
       </div>
 
@@ -695,7 +695,7 @@ function App() {
 
                   <div className="member-actions">
                     <button className="small" onClick={() => openRenew(m)}>🔄 تجديد</button>
-                    <button className="small secondary" onClick={() => setQrMember(m)}>🔲 QR</button>
+                    <button className="small secondary" onClick={() => setQrMember(m)}>QR Code</button>
                     <button className="small secondary" onClick={() => openEditForm(m)}>✏️ تعديل</button>
                     <button
                       className="small danger-btn"
