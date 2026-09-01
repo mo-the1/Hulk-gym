@@ -10,6 +10,8 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root {
     --bg: #0a0a0a;
@@ -26,7 +28,6 @@
   }
   * { box-sizing: border-box; }
   
-  /* تم إضافة خصائص تنعيم الخطوط هنا */
   html, body {
     margin: 0; padding: 0;
     background: var(--bg);
@@ -40,13 +41,10 @@
   #root { min-height: 100vh; }
 
   /* ---------- Login Screen ---------- */
- /* ---------- Login Screen ---------- */
   body {
     background-color: var(--bg);
     background-image: 
-      /* 1. التوهج الأخضر المميز لهوية هالك جيم */
       radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57,255,20,0.15), transparent 60%),
-      /* 2. نسيج الكاربون فايبر */
       linear-gradient(45deg, rgba(255,255,255,0.025) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.025) 75%, rgba(255,255,255,0.025)),
       linear-gradient(45deg, rgba(255,255,255,0.025) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.025) 75%, rgba(255,255,255,0.025));
     background-size: 100% 100%, 12px 12px, 12px 12px;
@@ -135,6 +133,12 @@
   .toolbar { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
   .toolbar input { flex: 1; min-width: 180px; margin-bottom: 0; }
   .btn-add { width: auto; white-space: nowrap; padding: 13px 22px; }
+  .btn-scan { width: auto; white-space: nowrap; padding: 13px 18px; background: transparent; border: 1px solid rgba(57,255,20,0.4); color: var(--brand); box-shadow: none; }
+  .btn-scan:hover { background: var(--brand-soft); }
+
+  #qr-reader { width: 100%; border-radius: 12px; overflow: hidden; }
+  #qr-reader img { display: none; }
+  .scan-result { text-align: center; padding: 14px 10px; color: var(--muted); font-size: 13.5px; }
 
   .members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
 
@@ -152,13 +156,16 @@
 
   .member-notes { font-size: 12.5px; color: var(--muted); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; line-height: 1.6; }
 
-  .member-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .member-actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
   .member-actions button { flex: 1; padding: 9px; border-radius: 8px; }
+
+  .qr-box { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 6px 0 4px; }
+  .qr-box canvas, .qr-box img { border-radius: 10px; background: #fff; padding: 12px; }
+  .qr-name { font-family: 'Bebas Neue', sans-serif; font-weight: 600; font-size: 18px; text-align: center; color: var(--text); }
 
   .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
   .empty-state .big { font-size: 32px; margin-bottom: 10px; }
 
-  /* زر تحميل المزيد */
   .load-more-container { text-align: center; margin-top: 30px; }
   .btn-load-more { background: transparent; border: 1px solid rgba(57,255,20,0.4); color: var(--brand); padding: 12px 30px; border-radius: 30px; width: auto; margin: 0 auto; display: inline-block; box-shadow: none; }
   .btn-load-more:hover { background: var(--brand-soft); }
@@ -170,10 +177,9 @@
   .modal { background: #141414; border: 1px solid var(--surface-border); border-radius: 16px; padding: 26px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
   .modal h3 { font-family: 'Bebas Neue', sans-serif; font-weight: 600; letter-spacing: 0.3px; margin: 0 0 20px; font-size: 17px; color: var(--brand); }
   .modal-actions { display: flex; gap: 10px; margin-top: 6px; }
-  .modal-preview { background: var(--brand-soft); border: 1px solid var(--surface-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 13.5px; color: #ffb8dc; }
+  .modal-preview { background: var(--brand-soft); border: 1px solid var(--surface-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 13.5px; color: #a3ff9e; }
   .confirm-text { font-size: 15px; text-align: center; line-height: 1.7; color: var(--text); margin: 0 0 22px; }
 
-  /* ---------- Mobile refinements ---------- */
   @media (max-width: 480px) {
     .login-card { padding: 30px 20px; }
     .container { padding: 16px 12px 50px; }
@@ -191,7 +197,7 @@
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 const SUPABASE_URL = "https://mfrveljsifglheyrmgbi.supabase.co";
 const SUPABASE_KEY = "sb_publishable_15xYpC6dNvCzbvUi9vuPfQ__xOua0NS";
@@ -203,7 +209,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
-const LOGO_DATA_URI = "https://mfrveljsifglheyrmgbi.supabase.co/storage/v1/object/public/assets/IMG_3932.PNG"
+const LOGO_DATA_URI = "https://mfrveljsifglheyrmgbi.supabase.co/storage/v1/object/public/assets/IMG_3932.PNG";
   
 // ---------- Date helpers ----------
 function getLocalDateStr(d = new Date()) {
@@ -232,6 +238,86 @@ function toWhatsAppLink(phone) {
   let digits = (phone || '').replace(/\D/g, '');
   if (digits.startsWith('0')) digits = '20' + digits.slice(1);
   return `https://wa.me/${digits}`;
+}
+
+// ---------- QR Code Display Component ----------
+function QRCodeModal({ member, onClose }) {
+  const qrRef = useRef(null);
+
+  useEffect(() => {
+    if (qrRef.current && member) {
+      qrRef.current.innerHTML = "";
+      new window.QRCode(qrRef.current, {
+        text: String(member.id),
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: window.QRCode.CorrectLevel.H
+      });
+    }
+  }, [member]);
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3>رمز QR الخاص بالعضو</h3>
+        <div className="qr-box">
+          <div ref={qrRef}></div>
+          <div className="qr-name">{member.name}</div>
+        </div>
+        <div className="modal-actions" style={{ marginTop: '20px' }}>
+          <button className="secondary" onClick={onClose}>إغلاق</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- QR Code Scanner Component ----------
+function QRScannerModal({ onClose, onScanSuccess }) {
+  const [scanResult, setScanResult] = useState("قم بتوجيه الكاميرا نحو كود الـ QR الخاص بالعضو");
+  const scannerRef = useRef(null);
+
+  useEffect(() => {
+    const html5QrCode = new window.Html5Qrcode("qr-reader");
+    scannerRef.current = html5QrCode;
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      (decodedText) => {
+        setScanResult(`تم العثور على المعرف: ${decodedText}`);
+        html5QrCode.stop().then(() => {
+          onScanSuccess(decodedText);
+        }).catch(err => console.error(err));
+      },
+      (errorMessage) => {
+        // Ignored scan errors for quiet behavior
+      }
+    ).catch(err => {
+      setScanResult("تعذر تشغيل الكاميرا. يرجى التأكد من إعطاء الصلاحية.");
+    });
+
+    return () => {
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().catch(err => console.error(err));
+      }
+    };
+  }, []);
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3>مسح كود QR</h3>
+        <div id="qr-reader"></div>
+        <div className="scan-result">{scanResult}</div>
+        <div className="modal-actions">
+          <button className="secondary" onClick={onClose}>إلغاء</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function App() {
@@ -269,6 +355,10 @@ function App() {
   // ---- Renew modal ----
   const [renewingMember, setRenewingMember] = useState(null);
   const [renewDays, setRenewDays] = useState("30");
+
+  // ---- QR Modals ----
+  const [qrMember, setQrMember] = useState(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   // ---- Delete confirm ----
   const [confirmAction, setConfirmAction] = useState(null);
@@ -357,7 +447,12 @@ function App() {
     // Apply Search via Supabase
     if (currentSearch.trim()) {
       const s = currentSearch.replace(/,/g, '').trim(); 
-      q = q.or(`name.ilike.%${s}%,phone.ilike.%${s}%`);
+      // If search is numeric and looks like an ID, attempt ID match or Name/Phone match
+      if (!isNaN(s)) {
+        q = q.or(`id.eq.${s},name.ilike.%${s}%,phone.ilike.%${s}%`);
+      } else {
+        q = q.or(`name.ilike.%${s}%,phone.ilike.%${s}%`);
+      }
     }
 
     // Pagination Limit
@@ -428,7 +523,6 @@ function App() {
     setShowForm(false);
     setEditingMember(null);
     
-    // Refresh fully
     await loadStats();
     await loadMembers(false, filter, debouncedSearch);
   };
@@ -465,6 +559,11 @@ function App() {
     setRenewingMember(null);
     await loadStats();
     await loadMembers(false, filter, debouncedSearch);
+  };
+
+  const handleQRScanned = (scannedId) => {
+    setShowScanner(false);
+    setSearch(scannedId);
   };
 
   // ---- Auth gates ----
@@ -545,10 +644,11 @@ function App() {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="🔍 بحث بالاسم أو رقم الموبايل..."
+          placeholder="🔍 بحث بالاسم، الرقم، أو الـ ID..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+        <button className="btn-scan" onClick={() => setShowScanner(true)}>📷 مسح QR</button>
         <button className="btn-add" onClick={openAddForm}>+ إضافة عضو</button>
       </div>
 
@@ -558,7 +658,7 @@ function App() {
         <div className="empty-state">
           <div className="big">🏋️</div>
           {stats.all === 0
-            ? "لا يوجدرأعضاء مسجلين. دوس \"+ إضافة عضو\" عشان تبدأ."
+            ? "لا يوجد أعضاء مسجلين. دوس \"+ إضافة عضو\" عشان تبدأ."
             : "لا يوجد نتائج مطابقة."}
         </div>
       ) : (
@@ -595,6 +695,7 @@ function App() {
 
                   <div className="member-actions">
                     <button className="small" onClick={() => openRenew(m)}>🔄 تجديد</button>
+                    <button className="small secondary" onClick={() => setQrMember(m)}>🔲 QR</button>
                     <button className="small secondary" onClick={() => openEditForm(m)}>✏️ تعديل</button>
                     <button
                       className="small danger-btn"
@@ -609,7 +710,6 @@ function App() {
             })}
           </div>
 
-          {/* زر عرض المزيد */}
           {hasMore && (
             <div className="load-more-container">
               <button 
@@ -667,6 +767,16 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ---- QR Code Display Modal ---- */}
+      {qrMember && (
+        <QRCodeModal member={qrMember} onClose={() => setQrMember(null)} />
+      )}
+
+      {/* ---- QR Code Scanner Modal ---- */}
+      {showScanner && (
+        <QRScannerModal onClose={() => setShowScanner(false)} onScanSuccess={handleQRScanned} />
       )}
 
       {/* ---- Delete confirmation ---- */}
