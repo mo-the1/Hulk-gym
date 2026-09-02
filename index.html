@@ -856,7 +856,7 @@ function App() {
       {scannerOpen && (
         <div className="overlay" onClick={() => setScannerOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>سكان كود العضو</h3>
+            <h3>Client QR Scan</h3>
 
             {scanStatus === "scanning" && <div id="qr-reader"></div>}
 
@@ -868,7 +868,7 @@ function App() {
               <>
                 <div className="scan-result">الكود غير تابع لأي عضو مسجل.</div>
                 <div className="modal-actions">
-                  <button className="secondary" onClick={rescan}>سكان تاني</button>
+                  <button className="secondary" onClick={rescan}>New scan</button>
                 </div>
               </>
             )}
