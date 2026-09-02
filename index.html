@@ -261,7 +261,7 @@ function QRCodeModal({ member, onClose }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <h3>رمز QR الخاص بالعضو</h3>
+        <h3>Client QR Code</h3>
         <div className="qr-box">
           <div ref={qrRef}></div>
           <div className="qr-name">{member.name}</div>
@@ -309,7 +309,7 @@ function QRScannerModal({ onClose, onScanSuccess }) {
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
-        <h3>مسح كود QR</h3>
+        <h3>Scan QR</h3>
         <div id="qr-reader"></div>
         <div className="scan-result">{scanResult}</div>
         <div className="modal-actions">
@@ -648,7 +648,7 @@ function App() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <button className="btn-scan" onClick={() => setShowScanner(true)}>📷 مسح QR</button>
+        <button className="btn-scan" onClick={() => setShowScanner(true)}>Scan QR</button>
         <button className="btn-add" onClick={openAddForm}>+ إضافة عضو</button>
       </div>
 
@@ -695,7 +695,7 @@ function App() {
 
                   <div className="member-actions">
                     <button className="small" onClick={() => openRenew(m)}>🔄 تجديد</button>
-                    <button className="small secondary" onClick={() => setQrMember(m)}>🔲 QR</button>
+                    <button className="small secondary" onClick={() => setQrMember(m)}>QR Code</button>
                     <button className="small secondary" onClick={() => openEditForm(m)}>✏️ تعديل</button>
                     <button
                       className="small danger-btn"
