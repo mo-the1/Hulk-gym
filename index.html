@@ -681,11 +681,11 @@ function App() {
       <div className="toolbar">
         <input
           type="text"
-          placeholder="🔍 بحث بالاسم، الرقم، أو الـ ID..."
+          placeholder="🔍 بحث بالاسم أو رقم الموبايل..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <button className="btn-scan" onClick={() => setShowScanner(true)}>Scan QR</button>
+        <button className="btn-scan" onClick={() => setScannerOpen(true)}>Scan QR</button>
         <button className="btn-add" onClick={openAddForm}>+ إضافة عضو</button>
       </div>
 
@@ -830,7 +830,7 @@ function App() {
       {qrMember && (
         <div className="overlay" onClick={() => setQrMember(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>Client QR Code</h3>
+            <h3>كود العضو</h3>
             <div className="qr-box">
               <div ref={qrBoxRef}></div>
               <div className="qr-name">{qrMember.name}</div>
@@ -856,7 +856,7 @@ function App() {
       {scannerOpen && (
         <div className="overlay" onClick={() => setScannerOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>Scan client QR code</h3>
+            <h3>سكان كود العضو</h3>
 
             {scanStatus === "scanning" && <div id="qr-reader"></div>}
 
@@ -868,7 +868,7 @@ function App() {
               <>
                 <div className="scan-result">الكود غير تابع لأي عضو مسجل.</div>
                 <div className="modal-actions">
-                  <button className="secondary" onClick={rescan}>New scan</button>
+                  <button className="secondary" onClick={rescan}>سكان تاني</button>
                 </div>
               </>
             )}
@@ -901,7 +901,7 @@ function App() {
                   </div>
 
                   {checkedInJustNow ? (
-                    <div className="scan-result">✅ تم تسجيل حضور {scannedMember.name} اليوم.</div>
+                    <div className="scan-result">✅ اتسجل حضور {scannedMember.name} النهاردة.</div>
                   ) : (
                     <div className="modal-actions" style={{ marginTop: 14 }}>
                       <button onClick={handleCheckIn} disabled={checkingIn}>
