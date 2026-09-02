@@ -28,7 +28,8 @@
   }
   * { box-sizing: border-box; }
   
-  html, body {
+  /* تم إضافة خصائص تنعيم الخطوط هنا */
+   html, body {
     margin: 0; padding: 0;
     background: var(--bg);
     color: var(--text);
@@ -41,7 +42,7 @@
   #root { min-height: 100vh; }
 
   /* ---------- Login Screen ---------- */
-  body {
+   body {
     background-color: var(--bg);
     background-image: 
       radial-gradient(ellipse 900px 500px at 50% -10%, rgba(57,255,20,0.15), transparent 60%),
@@ -109,7 +110,7 @@
   .error-text { color: #f87171; font-size: 13px; margin: -8px 0 14px; }
 
   /* ---------- Dashboard ---------- */
-  .container { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; }
+   .container { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; }
   .loading-center { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: var(--muted); }
 
   .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
@@ -159,13 +160,14 @@
   .member-actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
   .member-actions button { flex: 1; padding: 9px; border-radius: 8px; }
 
-  .qr-box { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 6px 0 4px; }
+ .qr-box { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 6px 0 4px; }
   .qr-box canvas, .qr-box img { border-radius: 10px; background: #fff; padding: 12px; }
   .qr-name { font-family: 'Bebas Neue', sans-serif; font-weight: 600; font-size: 18px; text-align: center; color: var(--text); }
 
   .empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
   .empty-state .big { font-size: 32px; margin-bottom: 10px; }
 
+  /* زر تحميل المزيد */
   .load-more-container { text-align: center; margin-top: 30px; }
   .btn-load-more { background: transparent; border: 1px solid rgba(57,255,20,0.4); color: var(--brand); padding: 12px 30px; border-radius: 30px; width: auto; margin: 0 auto; display: inline-block; box-shadow: none; }
   .btn-load-more:hover { background: var(--brand-soft); }
@@ -180,6 +182,7 @@
   .modal-preview { background: var(--brand-soft); border: 1px solid var(--surface-border); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 13.5px; color: #a3ff9e; }
   .confirm-text { font-size: 15px; text-align: center; line-height: 1.7; color: var(--text); margin: 0 0 22px; }
 
+  /* ---------- Mobile refinements ---------- */
   @media (max-width: 480px) {
     .login-card { padding: 30px 20px; }
     .container { padding: 16px 12px 50px; }
@@ -195,7 +198,6 @@
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
@@ -210,7 +212,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 const LOGO_DATA_URI = "https://mfrveljsifglheyrmgbi.supabase.co/storage/v1/object/public/assets/IMG_3932.PNG";
-  
+
 // ---------- Date helpers ----------
 function getLocalDateStr(d = new Date()) {
   const yyyy = d.getFullYear();
@@ -234,90 +236,10 @@ function getStatus(endDateStr) {
   if (dr <= 7) return { key: 'expiring', label: 'هيجدد قريب', color: '#f97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.3)' };
   return { key: 'active', label: 'نشط', color: '#22c55e', bg: 'rgba(34,197,94,0.12)', border: 'rgba(34,197,94,0.3)' };
 }
-function toWhatsAppLink(phone) {
+function toWhatsAppLink(phone, text) {
   let digits = (phone || '').replace(/\D/g, '');
   if (digits.startsWith('0')) digits = '20' + digits.slice(1);
-  return `https://wa.me/${digits}`;
-}
-
-// ---------- QR Code Display Component ----------
-function QRCodeModal({ member, onClose }) {
-  const qrRef = useRef(null);
-
-  useEffect(() => {
-    if (qrRef.current && member) {
-      qrRef.current.innerHTML = "";
-      new window.QRCode(qrRef.current, {
-        text: String(member.id),
-        width: 180,
-        height: 180,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: window.QRCode.CorrectLevel.H
-      });
-    }
-  }, [member]);
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <h3>Client QR Code</h3>
-        <div className="qr-box">
-          <div ref={qrRef}></div>
-          <div className="qr-name">{member.name}</div>
-        </div>
-        <div className="modal-actions" style={{ marginTop: '20px' }}>
-          <button className="secondary" onClick={onClose}>إغلاق</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- QR Code Scanner Component ----------
-function QRScannerModal({ onClose, onScanSuccess }) {
-  const [scanResult, setScanResult] = useState("قم بتوجيه الكاميرا نحو كود الـ QR الخاص بالعضو");
-  const scannerRef = useRef(null);
-
-  useEffect(() => {
-    const html5QrCode = new window.Html5Qrcode("qr-reader");
-    scannerRef.current = html5QrCode;
-
-    html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 220, height: 220 } },
-      (decodedText) => {
-        setScanResult(`تم العثور على المعرف: ${decodedText}`);
-        html5QrCode.stop().then(() => {
-          onScanSuccess(decodedText);
-        }).catch(err => console.error(err));
-      },
-      (errorMessage) => {
-        // Ignored scan errors for quiet behavior
-      }
-    ).catch(err => {
-      setScanResult("تعذر تشغيل الكاميرا. يرجى التأكد من إعطاء الصلاحية.");
-    });
-
-    return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(err => console.error(err));
-      }
-    };
-  }, []);
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <h3>Scan QR</h3>
-        <div id="qr-reader"></div>
-        <div className="scan-result">{scanResult}</div>
-        <div className="modal-actions">
-          <button className="secondary" onClick={onClose}>إلغاء</button>
-        </div>
-      </div>
-    </div>
-  );
+  return `https://wa.me/${digits}` + (text ? `?text=${encodeURIComponent(text)}` : '');
 }
 
 function App() {
@@ -356,12 +278,20 @@ function App() {
   const [renewingMember, setRenewingMember] = useState(null);
   const [renewDays, setRenewDays] = useState("30");
 
-  // ---- QR Modals ----
-  const [qrMember, setQrMember] = useState(null);
-  const [showScanner, setShowScanner] = useState(false);
-
   // ---- Delete confirm ----
   const [confirmAction, setConfirmAction] = useState(null);
+
+  // ---- QR modal ----
+  const [qrMember, setQrMember] = useState(null);
+  const qrBoxRef = useRef(null);
+
+  // ---- Scanner ----
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanStatus, setScanStatus] = useState("scanning"); // scanning | found | notfound | camera_error
+  const [scannedMember, setScannedMember] = useState(null);
+  const [checkingIn, setCheckingIn] = useState(false);
+  const [checkedInJustNow, setCheckedInJustNow] = useState(false);
+  const html5QrRef = useRef(null);
 
   // ---- Auth lifecycle ----
   useEffect(() => {
@@ -382,6 +312,114 @@ function App() {
     }, 350);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // ---- Draw QR code when qrMember changes ----
+  useEffect(() => {
+    if (qrMember && qrBoxRef.current) {
+      qrBoxRef.current.innerHTML = "";
+      new QRCode(qrBoxRef.current, {
+        text: qrMember.id,
+        width: 200,
+        height: 200,
+        colorDark: "#0c0a0d",
+        colorLight: "#ffffff"
+      });
+    }
+  }, [qrMember]);
+
+  const downloadQR = () => {
+    if (!qrBoxRef.current || !qrMember) return;
+    const canvas = qrBoxRef.current.querySelector('canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    const safeName = (qrMember.name || 'member').trim().replace(/\s+/g, '-');
+    link.download = `${safeName}-QR.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  // ---- Start/stop camera scanner ----
+  useEffect(() => {
+    if (scannerOpen) {
+      setScanStatus("scanning");
+      setScannedMember(null);
+      setCheckedInJustNow(false);
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrRef.current = html5QrCode;
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 220 },
+        async (decodedText) => {
+          html5QrCode.stop().catch(() => {});
+          const { data, error } = await supabase
+            .from('hulk_gym_members')
+            .select('*')
+            .eq('id', decodedText)
+            .maybeSingle();
+          if (error || !data) {
+            setScanStatus("notfound");
+          } else {
+            setScannedMember(data);
+            setScanStatus("found");
+          }
+        },
+        () => {}
+      ).catch(() => {
+        setScanStatus("camera_error");
+      });
+    }
+    return () => {
+      if (html5QrRef.current) {
+        html5QrRef.current.stop().then(() => html5QrRef.current.clear()).catch(() => {});
+        html5QrRef.current = null;
+      }
+    };
+  }, [scannerOpen]);
+
+  const handleCheckIn = async () => {
+    if (!scannedMember) return;
+    setCheckingIn(true);
+    const { error } = await supabase
+      .from('hulk_gym_members')
+      .update({ last_checkin: new Date().toISOString() })
+      .eq('id', scannedMember.id);
+    setCheckingIn(false);
+    if (error) { alert("خطأ: " + error.message); return; }
+    setCheckedInJustNow(true);
+  };
+
+  const rescan = () => {
+    setScanStatus("scanning");
+    setScannedMember(null);
+    setCheckedInJustNow(false);
+    if (html5QrRef.current) {
+      html5QrRef.current.stop().then(() => html5QrRef.current.clear()).catch(() => {});
+      html5QrRef.current = null;
+    }
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    html5QrRef.current = html5QrCode;
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 220 },
+      async (decodedText) => {
+        html5QrCode.stop().catch(() => {});
+        const { data, error } = await supabase
+          .from('hulk_gym_members')
+          .select('*')
+          .eq('id', decodedText)
+          .maybeSingle();
+        if (error || !data) {
+          setScanStatus("notfound");
+        } else {
+          setScannedMember(data);
+          setScanStatus("found");
+        }
+      },
+      () => {}
+    ).catch(() => {
+      setScanStatus("camera_error");
+    });
+  };
 
   // ---- Load Data when Session, Filter, or Search changes ----
   useEffect(() => {
@@ -413,7 +451,7 @@ function App() {
     const today = getLocalDateStr();
     const nextWeek = addDays(today, 7);
 
-    const [resAll, resExpired, resExpiring, resActive] = await Promise.all([
+   const [resAll, resExpired, resExpiring, resActive] = await Promise.all([
       supabase.from('hulk_gym_members').select('*', { count: 'exact', head: true }),
       supabase.from('hulk_gym_members').select('*', { count: 'exact', head: true }).lt('end_date', today),
       supabase.from('hulk_gym_members').select('*', { count: 'exact', head: true }).gte('end_date', today).lte('end_date', nextWeek),
@@ -447,12 +485,7 @@ function App() {
     // Apply Search via Supabase
     if (currentSearch.trim()) {
       const s = currentSearch.replace(/,/g, '').trim(); 
-      // If search is numeric and looks like an ID, attempt ID match or Name/Phone match
-      if (!isNaN(s)) {
-        q = q.or(`id.eq.${s},name.ilike.%${s}%,phone.ilike.%${s}%`);
-      } else {
-        q = q.or(`name.ilike.%${s}%,phone.ilike.%${s}%`);
-      }
+      q = q.or(`name.ilike.%${s}%,phone.ilike.%${s}%`);
     }
 
     // Pagination Limit
@@ -511,20 +544,29 @@ function App() {
     };
     
     let error;
+    let insertedRow = null;
     if (editingMember) {
       ({ error } = await supabase.from("hulk_gym_members").update(payload).eq("id", editingMember.id));
     } else {
-      ({ error } = await supabase.from("hulk_gym_members").insert(payload));
+      const res = await supabase.from("hulk_gym_members").insert(payload).select().single();
+      error = res.error;
+      insertedRow = res.data;
     }
     
     setSaving(false);
     if (error) { alert("خطأ: " + error.message); return; }
     
     setShowForm(false);
+    const wasNewMember = !editingMember;
     setEditingMember(null);
     
+    // Refresh fully
     await loadStats();
     await loadMembers(false, filter, debouncedSearch);
+
+    if (wasNewMember && insertedRow) {
+      setQrMember(insertedRow);
+    }
   };
 
   const handleDeleteMember = async (id) => {
@@ -559,11 +601,6 @@ function App() {
     setRenewingMember(null);
     await loadStats();
     await loadMembers(false, filter, debouncedSearch);
-  };
-
-  const handleQRScanned = (scannedId) => {
-    setShowScanner(false);
-    setSearch(scannedId);
   };
 
   // ---- Auth gates ----
@@ -700,7 +737,7 @@ function App() {
                     <button
                       className="small danger-btn"
                       onClick={() => setConfirmAction({
-                        message: `هل انت متأكد من الحذف "${m.name}" نهائياً؟`,
+                        message: `متأكد من الحذف "${m.name}" نهائياً؟`,
                         onConfirm: () => handleDeleteMember(m.id)
                       })}
                     >🗑️ حذف</button>
@@ -710,6 +747,7 @@ function App() {
             })}
           </div>
 
+          {/* زر عرض المزيد */}
           {hasMore && (
             <div className="load-more-container">
               <button 
@@ -717,7 +755,7 @@ function App() {
                 onClick={() => loadMembers(true, filter, debouncedSearch)}
                 disabled={loadingMembers}
               >
-                {loadingMembers ? "جاري التحميل..." : "عرض المزيد"}
+                {loadingMembers ? "جاري التحميل..." : "عرض المزيد ⬇️"}
               </button>
             </div>
           )}
@@ -737,7 +775,7 @@ function App() {
             <input type="date" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} />
             <label>مدة الاشتراك (بالأيام)</label>
             <input type="number" min="1" placeholder="30" value={formData.subscription_days} onChange={e => setFormData({ ...formData, subscription_days: e.target.value })} />
-            <label>ملاحظات اضافية</label>
+            <label>ملاحظات (اختياري)</label>
             <textarea rows="2" placeholder="أي ملاحظات عن العضو..." value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
             <div className="modal-actions">
               <button className="secondary" onClick={() => setShowForm(false)}>إلغاء</button>
@@ -769,16 +807,6 @@ function App() {
         </div>
       )}
 
-      {/* ---- QR Code Display Modal ---- */}
-      {qrMember && (
-        <QRCodeModal member={qrMember} onClose={() => setQrMember(null)} />
-      )}
-
-      {/* ---- QR Code Scanner Modal ---- */}
-      {showScanner && (
-        <QRScannerModal onClose={() => setShowScanner(false)} onScanSuccess={handleQRScanned} />
-      )}
-
       {/* ---- Delete confirmation ---- */}
       {confirmAction && (
         <div className="overlay" onClick={() => setConfirmAction(null)}>
@@ -793,6 +821,103 @@ function App() {
               >
                 {saving ? "..." : "تأكيد الحذف"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- QR modal ---- */}
+      {qrMember && (
+        <div className="overlay" onClick={() => setQrMember(null)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>Client QR Code</h3>
+            <div className="qr-box">
+              <div ref={qrBoxRef}></div>
+              <div className="qr-name">{qrMember.name}</div>
+            </div>
+            <div className="scan-result">يرجى الحفظ وارساله للعضو</div>
+            <div className="modal-actions">
+              <button onClick={downloadQR}>📥 حفظ</button>
+              <button
+                className="secondary"
+                onClick={() => window.open(toWhatsAppLink(qrMember.phone, `أهلاً ${qrMember.name} 👋 ده كود الدخول بتاعك في HULK GYM، احفظه على موبايلك وسجل دخول بيه كل مرة.`), '_blank')}
+              >
+                💬 ارسال على واتساب
+              </button>
+            </div>
+            <div className="modal-actions">
+              <button className="secondary" onClick={() => setQrMember(null)}>إغلاق</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Scanner modal ---- */}
+      {scannerOpen && (
+        <div className="overlay" onClick={() => setScannerOpen(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>سكان كود العضو</h3>
+
+            {scanStatus === "scanning" && <div id="qr-reader"></div>}
+
+            {scanStatus === "camera_error" && (
+              <div className="scan-result">لم يتم الوصول للكاميرا. تأكد من الاذن.</div>
+            )}
+
+            {scanStatus === "notfound" && (
+              <>
+                <div className="scan-result">الكود غير تابع لأي عضو مسجل.</div>
+                <div className="modal-actions">
+                  <button className="secondary" onClick={rescan}>سكان تاني</button>
+                </div>
+              </>
+            )}
+
+            {scanStatus === "found" && scannedMember && (() => {
+              const status = getStatus(scannedMember.end_date);
+              const dr = daysRemaining(scannedMember.end_date);
+              return (
+                <>
+                  <div className="member-card">
+                    <div className="member-top">
+                      <div>
+                        <div className="member-name">{scannedMember.name}</div>
+                        <div className="member-phone-row">
+                          <a href={"tel:" + scannedMember.phone} className="icon-link" title="اتصال">📞</a>
+                          <a href={toWhatsAppLink(scannedMember.phone)} target="_blank" rel="noreferrer" className="icon-link" title="واتساب">💬</a>
+                          <span>{scannedMember.phone}</span>
+                        </div>
+                      </div>
+                      <span className="badge" style={{ color: status.color, background: status.bg, borderColor: status.border }}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="member-dates">
+                      <div><span style={{ color: "var(--muted)" }}>نهاية:</span> {scannedMember.end_date}</div>
+                      <div className="days-left" style={{ color: status.color }}>
+                        {status.key === 'expired' ? `منتهي من ${Math.abs(dr)} يوم` : `متبقي ${dr} يوم`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {checkedInJustNow ? (
+                    <div className="scan-result">✅ تم تسجيل حضور {scannedMember.name} اليوم.</div>
+                  ) : (
+                    <div className="modal-actions" style={{ marginTop: 14 }}>
+                      <button onClick={handleCheckIn} disabled={checkingIn}>
+                        {checkingIn ? "جاري التسجيل..." : "✅ تسجيل حضور"}
+                      </button>
+                    </div>
+                  )}
+                  <div className="modal-actions">
+                    <button className="secondary" onClick={rescan}>New Scan</button>
+                  </div>
+                </>
+              );
+            })()}
+
+            <div className="modal-actions">
+              <button className="secondary" onClick={() => setScannerOpen(false)}>إغلاق</button>
             </div>
           </div>
         </div>
